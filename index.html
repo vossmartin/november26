@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Gästeliste</title>
+<style>
+  :root {
+    --bg: #101418; --card: #1a2027; --card2: #222a33; --line: #2e3945;
+    --text: #e8edf2; --dim: #93a1af; --accent: #f5a623; --accent-dark: #c47f0e;
+    --ok: #3ddc84; --warn: #ffb454; --err: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 460px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 2px; letter-spacing: .3px; }
+  .sub { color: var(--dim); margin: 0 0 18px; font-size: .95rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .info-line { display: flex; gap: 10px; margin: 6px 0; font-size: .95rem; }
+  .info-line .ico { width: 1.4em; text-align: center; flex: none; }
+  .counter { display: flex; align-items: baseline; gap: 10px; }
+  .counter .big { font-size: 1.9rem; font-weight: 700; color: var(--accent); }
+  .counter .lbl { color: var(--dim); }
+  .bar { height: 6px; background: var(--card2); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+  label { display: block; font-size: .85rem; color: var(--dim); margin: 14px 0 6px; }
+  input[type=text] {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card2); color: var(--text); font-size: 1.05rem; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  .plus-row { display: flex; gap: 8px; }
+  .plus-row button {
+    flex: 1; padding: 10px 0; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card2); color: var(--text); font-size: 1rem; cursor: pointer;
+  }
+  .plus-row button.sel { background: var(--accent); border-color: var(--accent); color: #1a1204; font-weight: 700; }
+  .btn {
+    display: block; width: 100%; margin-top: 18px; padding: 14px; border: 0; border-radius: 12px;
+    background: var(--accent); color: #1a1204; font-size: 1.05rem; font-weight: 700; cursor: pointer;
+  }
+  .btn:active { background: var(--accent-dark); }
+  .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); font-weight: 500; }
+  .btn.danger { background: transparent; border: 1px solid var(--err); color: var(--err); font-weight: 600; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .msg { margin-top: 12px; font-size: .92rem; border-radius: 10px; padding: 10px 12px; display: none; }
+  .msg.err { display: block; background: rgba(255,107,107,.12); color: var(--err); }
+  .msg.ok { display: block; background: rgba(61,220,132,.1); color: var(--ok); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+  .badge.ok { background: rgba(61,220,132,.15); color: var(--ok); }
+  .badge.warn { background: rgba(255,180,84,.15); color: var(--warn); }
+  .linkbox {
+    margin-top: 10px; padding: 10px 12px; background: var(--card2); border: 1px dashed var(--line);
+    border-radius: 10px; font-size: .8rem; color: var(--dim); word-break: break-all;
+  }
+  .small { font-size: .82rem; color: var(--dim); }
+  .hidden { display: none !important; }
+  a { color: var(--accent); }
+  /* Tür-Modus */
+  .door-head { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 5; }
+  .door-search { width: 100%; }
+  .guest {
+    display: flex; align-items: center; gap: 12px; padding: 13px 6px;
+    border-bottom: 1px solid var(--line); cursor: pointer; user-select: none;
+  }
+  .guest .check {
+    width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--dim);
+    flex: none; display: flex; align-items: center; justify-content: center; font-size: 1rem;
+  }
+  .guest.da .check { background: var(--ok); border-color: var(--ok); color: #06280f; }
+  .guest.da .gname { color: var(--dim); text-decoration: line-through; }
+  .guest .gname { flex: 1; font-size: 1.05rem; }
+  .guest .gplus { color: var(--warn); font-weight: 700; }
+  .guest.wl { opacity: .55; }
+  .guest .gvon { font-size: .72rem; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+  .guest.partial .check { background: var(--warn); border-color: var(--warn); color: #3a2503; font-weight: 700; }
+  .stepper { display: flex; align-items: center; gap: 4px; flex: none; }
+  .stepper button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--card2); color: var(--text); font-size: 1.15rem; cursor: pointer; }
+  .stepper .stv { min-width: 40px; text-align: center; font-weight: 700; font-size: .9rem; }
+  .spin { text-align: center; color: var(--dim); padding: 30px 0; }
+  #site-footer { margin-top: 30px; color: var(--dim); font-size: .78rem; line-height: 1.5; }
+  #site-footer summary { cursor: pointer; color: var(--dim); }
+  #site-footer p { margin: 6px 0 0; }
+  #poster { width: 100%; border-radius: 14px; margin-bottom: 16px; display: block; }
+  /* Druckansicht */
+  #print-area { display: none; }
+  @media print {
+    body { background: #fff; color: #000; }
+    .wrap > *:not(#print-area), #app, #door { display: none !important; }
+    #print-area { display: block; font: 12pt/1.5 Georgia, serif; color: #000; }
+    #print-area h2 { margin: 0 0 2pt; }
+    #print-area .phead { color: #444; margin: 0 0 12pt; font-size: 10pt; }
+    #print-area table { width: 100%; border-collapse: collapse; }
+    #print-area th, #print-area td { border-bottom: 1pt solid #999; padding: 6pt 4pt; text-align: left; }
+    #print-area .pbox { display: inline-block; width: 12pt; height: 12pt; border: 1.5pt solid #000; }
+    #print-area .pwl { color: #666; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ======= KONFIGURATION ======= -->
+  <script>
+  var CONFIG = {
+    EXEC_URL: 'https://script.google.com/macros/s/AKfycbzQPVZ4PCUNJJPko3ldFmQ_scIbO438BuMxGy9XWvNX4hQPQdGA0rpoXekN-b5I5dAfpQ/exec',
+    band: 'Swipe Collective',          // <- Bandname
+    titel: 'Konzert in der Junction Bar',
+    datumText: 'Sa, 7. November 2026', // <- Datum als Anzeigetext
+    datumISO: '20261107',              // <- für den Kalender-Button (leer = Button aus)
+    einlass: '19:00',
+    beginn: '20:00',
+    ort: 'Junction Bar',
+    adresse: 'Gneisenaustraße 18, 10961 Berlin (Kreuzberg)',
+    posterUrl: 'poster.jpg',           // <- leer = kein Poster
+    paypalUrl: 'https://paypal.me/vossmartin', // <- leer = keine Beitrags-Karte
+    spendenText: 'Der Eintritt ist für euch frei. Wenn ihr uns unterstützen wollt: Proberaum, Saiten und Technik zahlen wir selbst — über einen kleinen freiwilligen Beitrag freuen wir uns sehr.',
+    kontaktName: 'Martin (Swipe Collective)', // <- Footer: verantwortliche Person / Bandname
+    kontaktEmail: ''                   // <- bleibt leer: keine E-Mail-Adresse auf der öffentlichen Seite
+  };
+  </script>
+
+  <div id="app">
+    <img id="poster" class="hidden" alt="Konzertposter">
+    <h1 id="h-band"></h1>
+    <p class="sub" id="h-titel"></p>
+
+    <div class="card" id="card-info">
+      <div class="info-line"><span class="ico">📅</span><span id="i-datum"></span></div>
+      <div class="info-line"><span class="ico">🕗</span><span id="i-zeit"></span></div>
+      <div class="info-line"><span class="ico">📍</span><span id="i-ort"></span></div>
+      <button class="btn ghost" id="btn-ics" style="margin-top:12px">📆 In Kalender speichern</button>
+    </div>
+
+    <div class="card" id="card-counter">
+      <div class="counter"><span class="big" id="c-frei">…</span><span class="lbl" id="c-lbl">Plätze frei</span></div>
+      <div class="bar"><i id="c-bar" style="width:0%"></i></div>
+      <div class="small" id="c-wl" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Freeze-Hinweis (Konzerttag) -->
+    <div class="card hidden" id="card-frozen">
+      <strong>Die Online-Anmeldung ist geschlossen.</strong>
+      <p class="small" style="margin-bottom:0">Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird dir weitergeholfen.</p>
+    </div>
+
+    <!-- Anmeldeformular -->
+    <div class="card" id="card-form">
+      <strong>Auf die Gästeliste</strong>
+      <label for="f-name">Vor- und Nachname</label>
+      <input type="text" id="f-name" autocomplete="name" placeholder="z. B. Anna Beispiel">
+      <input type="text" id="f-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0">
+      <label>Begleitung</label>
+      <div class="plus-row" id="f-plus">
+        <button data-p="0" class="sel">nur ich</button>
+        <button data-p="1">+1</button>
+        <button data-p="2">+2</button>
+        <button data-p="3">+3</button>
+        <button data-p="4">+4</button>
+      </div>
+      <button class="btn" id="btn-signup">Anmelden</button>
+      <div class="msg" id="form-msg"></div>
+      <p class="small" style="margin-bottom:0">Bitte den vollständigen Namen — damit wir dich an der Tür finden. Keine E-Mail, keine Handynummer.</p>
+    </div>
+
+    <!-- Eigener Eintrag -->
+    <div class="card hidden" id="card-me">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Dein Eintrag</strong>
+        <span class="badge ok" id="me-badge">angemeldet</span>
+      </div>
+      <label for="m-name">Vor- und Nachname</label>
+      <input type="text" id="m-name">
+      <label>Begleitung</label>
+      <div class="plus-row" id="m-plus">
+        <button data-p="0">nur ich</button>
+        <button data-p="1">+1</button>
+        <button data-p="2">+2</button>
+        <button data-p="3">+3</button>
+        <button data-p="4">+4</button>
+      </div>
+      <button class="btn" id="btn-update">Änderung speichern</button>
+      <button class="btn danger" id="btn-cancel">Abmelden — ich kann doch nicht</button>
+      <div class="msg" id="me-msg"></div>
+      <div class="linkbox">Auf diesem Gerät merkt sich die Seite deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen" wählen — nur dort merkt sich die Seite deinen Eintrag zuverlässig. Falls du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder dir selbst per WhatsApp schicken.<br>
+        <a href="#" id="me-link"></a> <button class="btn ghost" id="btn-copy" style="margin-top:8px;padding:8px">Link kopieren</button>
+      </div>
+    </div>
+
+    <!-- Abgemeldet -->
+    <div class="card hidden" id="card-bye">
+      <strong>Du bist abgemeldet.</strong>
+      <p class="small">Schade! Falls du es dir anders überlegst, kannst du dich unten einfach neu anmelden.</p>
+      <button class="btn ghost" id="btn-again">Neu anmelden</button>
+    </div>
+
+    <!-- Spenden -->
+    <div class="card hidden" id="card-spende">
+      <strong>🎸 Unterstützt uns</strong>
+      <p class="small" id="spende-text" style="margin:8px 0 0"></p>
+      <a class="btn ghost" id="btn-paypal" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💛 Freiwilliger Beitrag per PayPal</a>
+    </div>
+
+    <div class="msg err" id="setup-msg" style="display:none"></div>
+
+    <footer id="site-footer">
+      <div id="ft-kontakt"></div>
+      <details>
+        <summary>Datenschutz</summary>
+        <p>Wir speichern nur, was du hier selbst angibst: deinen Namen und die Zahl deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der du den Link hast.</p>
+      </details>
+    </footer>
+  </div>
+
+  <!-- Tür-Modus -->
+  <div id="door" class="hidden">
+    <h1>Tür-Liste</h1>
+    <p class="sub" id="d-stats">…</p>
+    <div class="door-head">
+      <input type="text" class="door-search" id="d-search" placeholder="🔍 Name suchen…">
+    </div>
+    <div id="d-list" class="spin">Lade Liste…</div>
+    <button class="btn ghost" id="btn-print" style="margin-top:20px">🖨 Liste drucken (Papier-Fallback)</button>
+  </div>
+
+  <!-- Nur für den Ausdruck -->
+  <div id="print-area"></div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var LS_KEY = 'gl_cred';
+  var loadTs = Date.now(); // für die Mindest-Ausfüllzeit (Spam-Bremse)
+
+  function rnd128() {
+    var a = new Uint8Array(16);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+    else for (var i = 0; i < 16; i++) a[i] = Math.floor(Math.random() * 256);
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+  // requestId: bleibt über Wiederholversuche gleich → Backend legt bei Timeout+Retry keinen zweiten Eintrag an
+  function getRid() {
+    var r = localStorage.getItem('gl_rid');
+    if (!r) { r = rnd128(); localStorage.setItem('gl_rid', r); }
+    return r;
+  }
+
+  // ---------- API ----------
+  function api(payload) {
+    return fetch(CONFIG.EXEC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); });
+  }
+  function apiStatus() {
+    return fetch(CONFIG.EXEC_URL).then(function (r) { return r.json(); });
+  }
+
+  // ---------- State ----------
+  function cred() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; }
+  }
+  function saveCred(c) { localStorage.setItem(LS_KEY, JSON.stringify(c)); }
+  function clearCred() { localStorage.removeItem(LS_KEY); }
+
+  function parseHash() {
+    var h = location.hash.replace(/^#/, '');
+    var m = h.match(/^tuer=(.+)$/);
+    if (m) return { door: m[1] };
+    m = h.match(/^e=([^.]+)\.(.+)$/);
+    if (m) return { id: m[1], token: m[2] };
+    m = h.match(/^v=(.+)$/);
+    if (m) return { via: decodeURIComponent(m[1]) };
+    return {};
+  }
+  var inviteVon = ''; // Einlader-Tag aus dem verteilten Link (#v=name), rein intern
+
+  // ---------- UI helpers ----------
+  function showMsg(el, text, ok) {
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+  }
+  function hideMsg(el) { el.className = 'msg'; el.textContent = ''; }
+  function plusValue(rowEl) {
+    var sel = rowEl.querySelector('.sel');
+    return sel ? Number(sel.dataset.p) : 0;
+  }
+  function bindPlusRow(rowEl) {
+    rowEl.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      rowEl.querySelectorAll('button').forEach(function (x) { x.classList.remove('sel'); });
+      b.classList.add('sel');
+    });
+  }
+  function setPlus(rowEl, p) {
+    rowEl.querySelectorAll('button').forEach(function (x) {
+      x.classList.toggle('sel', Number(x.dataset.p) === p);
+    });
+  }
+
+  // ---------- Öffentlicher Zähler ----------
+  function renderStatus(s) {
+    if (s.frozen) {
+      $('card-frozen').classList.remove('hidden');
+      $('card-form').classList.add('hidden');
+      $('card-counter').classList.add('hidden');
+      return;
+    }
+    if (s.warteliste > 0) {
+      // Solange gewartet wird, wäre „X Plätze frei" irreführend (Neue stellen sich hinten an)
+      $('c-frei').textContent = '⏳';
+      $('c-lbl').textContent = 'Warteliste aktiv — ' + s.warteliste + (s.warteliste === 1 ? ' Person wartet' : ' Personen warten');
+    } else {
+      $('c-frei').textContent = s.frei;
+      $('c-lbl').textContent = s.frei === 1 ? 'Platz frei' : 'Plätze frei';
+    }
+    $('c-bar').style.width = Math.min(100, Math.round(100 * s.belegt / s.capacity)) + '%';
+    $('c-wl').textContent = '';
+    $('btn-signup').textContent = (s.frei === 0 || s.warteliste > 0) ? 'Auf die Warteliste' : 'Anmelden';
+  }
+  function refreshStatus() {
+    apiStatus().then(renderStatus).catch(function () {});
+  }
+
+  // ---------- Info-Karte ----------
+  function renderInfo() {
+    document.title = CONFIG.band + ' — Gästeliste';
+    $('h-band').textContent = CONFIG.band;
+    $('h-titel').textContent = CONFIG.titel;
+    $('i-datum').textContent = CONFIG.datumText;
+    $('i-zeit').textContent = 'Einlass ' + CONFIG.einlass + ' · Beginn ' + CONFIG.beginn;
+    $('i-ort').textContent = CONFIG.ort + ' · ' + CONFIG.adresse;
+    if (!CONFIG.datumISO) $('btn-ics').classList.add('hidden');
+    if (CONFIG.posterUrl) {
+      $('poster').src = CONFIG.posterUrl;
+      $('poster').classList.remove('hidden');
+    }
+    if (CONFIG.paypalUrl) {
+      $('spende-text').textContent = CONFIG.spendenText;
+      $('btn-paypal').href = CONFIG.paypalUrl;
+      $('card-spende').classList.remove('hidden');
+    }
+    $('ft-kontakt').textContent = (CONFIG.kontaktName || CONFIG.kontaktEmail)
+      ? 'Kontakt: ' + [CONFIG.kontaktName, CONFIG.kontaktEmail].filter(Boolean).join(' · ')
+      : 'Kontakt: (kontaktName/kontaktEmail in CONFIG eintragen)';
+  }
+  function icsDownload() {
+    var dt = CONFIG.datumISO; // 'YYYYMMDD'
+    var start = dt + 'T' + CONFIG.einlass.replace(':', '') + '00';
+    var beginn = dt + 'T' + CONFIG.beginn.replace(':', '') + '00';
+    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//gaesteliste//DE', 'BEGIN:VEVENT',
+      'UID:' + dt + '-gaesteliste@' + location.host,
+      'DTSTART;TZID=Europe/Berlin:' + start,
+      'DTEND;TZID=Europe/Berlin:' + dt + 'T235900',
+      'SUMMARY:' + CONFIG.band + ' — ' + CONFIG.ort,
+      'DESCRIPTION:Einlass ' + CONFIG.einlass + '\\, Beginn ' + CONFIG.beginn + '. Du stehst auf der Gästeliste.',
+      'LOCATION:' + CONFIG.ort + '\\, ' + CONFIG.adresse.replace(/,/g, '\\,'),
+      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    var a = document.createElement('a');
+    a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+    a.download = 'konzert.ics';
+    a.click();
+    void beginn;
+  }
+
+  // ---------- Gast-Ansichten ----------
+  function showForm() {
+    $('card-form').classList.remove('hidden');
+    $('card-me').classList.add('hidden');
+    $('card-bye').classList.add('hidden');
+  }
+  function showMe(data) {
+    $('card-form').classList.add('hidden');
+    $('card-bye').classList.add('hidden');
+    $('card-me').classList.remove('hidden');
+    $('m-name').value = data.name || '';
+    setPlus($('m-plus'), Number(data.plus) || 0);
+    var badge = $('me-badge');
+    if (data.status === 'warteliste') {
+      badge.className = 'badge warn';
+      badge.textContent = 'Warteliste' + (data.position ? ' · Platz ' + data.position : '');
+    } else {
+      badge.className = 'badge ok';
+      badge.textContent = 'angemeldet ✓';
+    }
+    var c = cred();
+    var link = location.origin + location.pathname + '#e=' + c.id + '.' + c.token;
+    $('me-link').textContent = link;
+    $('me-link').href = link;
+    if (data.frozen) {
+      $('btn-update').disabled = true;
+      $('btn-cancel').disabled = true;
+      showMsg($('me-msg'), 'Die Liste ist eingefroren — Änderungen sind nicht mehr möglich. Bis später!', true);
+    } else {
+      $('btn-update').disabled = false;
+      $('btn-cancel').disabled = false;
+    }
+  }
+  function showBye() {
+    $('card-form').classList.add('hidden');
+    $('card-me').classList.add('hidden');
+    $('card-bye').classList.remove('hidden');
+  }
+
+  function loadMe() {
+    var c = cred();
+    if (!c) { showForm(); return; }
+    api({ action: 'me', id: c.id, token: c.token }).then(function (r) {
+      if (!r.ok) { clearCred(); showForm(); return; }
+      renderStatus(r);
+      if (r.status === 'abgemeldet') showBye(); else showMe(r);
+    }).catch(function () { showForm(); });
+  }
+
+  // ---------- Aktionen ----------
+  function doSignup(force) {
+    hideMsg($('form-msg'));
+    var name = $('f-name').value.trim();
+    if (!name) { showMsg($('form-msg'), 'Bitte gib deinen Namen an.', false); return; }
+    $('btn-signup').disabled = true;
+    api({ action: 'signup', name: name, plus: plusValue($('f-plus')), von: inviteVon,
+          rid: getRid(), hp: $('f-hp').value, t: Date.now() - loadTs, force: force === true }).then(function (r) {
+      $('btn-signup').disabled = false;
+      if (r.duplicate) {
+        if (confirm(r.error + '\n\nTrotzdem zusätzlich anmelden?')) doSignup(true);
+        return;
+      }
+      if (!r.ok) { showMsg($('form-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      localStorage.removeItem('gl_rid'); // Anmeldung ist durch — nächste Anmeldung bekommt eine neue rid
+      saveCred({ id: r.id, token: r.token });
+      renderStatus(r);
+      showMe(r);
+      showMsg($('me-msg'), r.status === 'warteliste'
+        ? 'Die Liste ist gerade voll — du stehst auf der Warteliste. Wichtig: Wir können dich nicht benachrichtigen — schau vor dem Konzert hier mit deinem Link nach deinem Status.'
+        : 'Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach deinen Namen. Bis zum Konzert! 🎸', true);
+    }).catch(function () {
+      $('btn-signup').disabled = false;
+      showMsg($('form-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen. (Keine Sorge: doppelt zählt nicht.)', false);
+    });
+  }
+
+  function doUpdate() {
+    hideMsg($('me-msg'));
+    var c = cred(); if (!c) return;
+    $('btn-update').disabled = true;
+    api({ action: 'update', id: c.id, token: c.token, name: $('m-name').value.trim(), plus: plusValue($('m-plus')) })
+      .then(function (r) {
+        $('btn-update').disabled = false;
+        if (!r.ok) { showMsg($('me-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+        renderStatus(r); showMe(r);
+        showMsg($('me-msg'), 'Gespeichert.', true);
+      }).catch(function () {
+        $('btn-update').disabled = false;
+        showMsg($('me-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen.', false);
+      });
+  }
+
+  function doCancel() {
+    if (!confirm('Wirklich von der Gästeliste abmelden?')) return;
+    var c = cred(); if (!c) return;
+    $('btn-cancel').disabled = true;
+    api({ action: 'cancel', id: c.id, token: c.token }).then(function (r) {
+      $('btn-cancel').disabled = false;
+      if (!r.ok) { showMsg($('me-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      renderStatus(r); showBye();
+    }).catch(function () {
+      $('btn-cancel').disabled = false;
+      showMsg($('me-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen.', false);
+    });
+  }
+
+  // ---------- Tür-Modus ----------
+  var doorGuests = [];
+  var doorToken = '';
+  var lastSync = null;
+  var DQ_KEY = 'gl_doorq'; // Offline-Queue: fehlgeschlagene Check-ins, werden nachgesendet
+
+  function dq() { try { return JSON.parse(localStorage.getItem(DQ_KEY) || '[]'); } catch (e) { return []; } }
+  function dqSave(q) { localStorage.setItem(DQ_KEY, JSON.stringify(q)); }
+  function dqPush(id, da) {
+    var q = dq().filter(function (x) { return x.id !== id; });
+    q.push({ id: id, da: da }); // absolute Werte — letzter Stand pro Gast gewinnt
+    dqSave(q);
+  }
+  function dqFlush() {
+    var q = dq();
+    if (!q.length) return Promise.resolve();
+    var item = q[0];
+    return api({ action: 'checkin', admin: doorToken, id: item.id, da: item.da }).then(function (r) {
+      if (r.ok) { dqSave(dq().filter(function (x) { return x.id !== item.id; })); return dqFlush(); }
+    }).catch(function () { /* Netz weiter weg — Queue bleibt */ });
+  }
+
+  function personsOfG(g) { return 1 + (Number(g.plus) || 0); }
+
+  function setDa(g, da) {
+    g.da = Math.max(0, Math.min(personsOfG(g), da));
+    renderDoor(); updateDoorStats();
+    api({ action: 'checkin', admin: doorToken, id: g.id, da: g.da }).then(function (r) {
+      if (!r.ok) { dqPush(g.id, g.da); updateDoorStats(); }
+    }).catch(function () { dqPush(g.id, g.da); updateDoorStats(); });
+  }
+
+  function renderDoor() {
+    var q = $('d-search').value.trim().toLowerCase();
+    var host = $('d-list');
+    host.className = '';
+    host.innerHTML = '';
+    var shown = doorGuests.filter(function (g) {
+      return !q || g.name.toLowerCase().indexOf(q) >= 0;
+    });
+    if (!shown.length) { host.innerHTML = '<p class="spin">Keine Treffer.</p>'; }
+    shown.forEach(function (g) {
+      var n = personsOfG(g);
+      var full = g.da >= n;
+      var div = document.createElement('div');
+      div.className = 'guest' + (full ? ' da' : (g.da > 0 ? ' partial' : '')) + (g.status === 'warteliste' ? ' wl' : '');
+      div.innerHTML = '<div class="check">' + (full ? '✓' : (g.da > 0 ? g.da : '')) + '</div>' +
+        '<div class="gname"></div>' +
+        (g.von ? '<div class="gvon"></div>' : '') +
+        (g.status === 'warteliste' ? '<div class="small">WL</div>' : '') +
+        '<div class="stepper"><button class="st-m" aria-label="einer weniger">−</button><span class="stv">' + g.da + '/' + n + '</span><button class="st-p" aria-label="einer mehr">+</button></div>';
+      div.querySelector('.gname').textContent = g.name;
+      if (g.von) div.querySelector('.gvon').textContent = g.von;
+      div.querySelector('.st-m').addEventListener('click', function (ev) { ev.stopPropagation(); setDa(g, g.da - 1); });
+      div.querySelector('.st-p').addEventListener('click', function (ev) { ev.stopPropagation(); setDa(g, g.da + 1); });
+      // Tap auf die Zeile = ganze Gruppe rein (bzw. wieder raus)
+      div.addEventListener('click', function () { setDa(g, full ? 0 : n); });
+      host.appendChild(div);
+    });
+  }
+  function updateDoorStats() {
+    var tot = 0, da = 0, wl = 0;
+    doorGuests.forEach(function (g) {
+      var p = personsOfG(g);
+      if (g.status === 'warteliste') { wl += p; return; }
+      tot += p; da += Math.min(Number(g.da) || 0, p);
+    });
+    var pend = dq().length;
+    $('d-stats').textContent = da + ' von ' + tot + ' Personen da' + (wl ? ' · Warteliste: ' + wl : '') +
+      ' · Sync: ' + (lastSync ? lastSync.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : '—') +
+      (pend ? ' · ⚠ ' + pend + ' warten auf Netz' : '');
+  }
+  function initDoor(adminToken) {
+    doorToken = adminToken;
+    // Token sofort aus der Adresszeile entfernen (Browserverlauf, Schulterblick, Druck-Kopfzeile)
+    history.replaceState(null, '', location.pathname + location.search);
+    $('app').classList.add('hidden');
+    $('door').classList.remove('hidden');
+    function load() {
+      dqFlush().then(function () {
+        return api({ action: 'list', admin: doorToken });
+      }).then(function (r) {
+        if (!r || !r.ok) { updateDoorStats(); return; } // alte Liste NIE verwerfen
+        var q = dq();
+        doorGuests = (r.gaeste || []).map(function (g) {
+          // lokale, noch nicht gesendete Check-ins über die Serverdaten legen
+          for (var i = 0; i < q.length; i++) if (q[i].id === g.id) g.da = q[i].da;
+          return g;
+        });
+        lastSync = new Date();
+        renderDoor(); updateDoorStats();
+      }).catch(function () { updateDoorStats(); }); // Fehler: alte Liste bleibt stehen, Sync-Zeit bleibt alt
+    }
+    $('d-search').addEventListener('input', function () { renderDoor(); });
+    $('btn-print').addEventListener('click', function () {
+      var rows = doorGuests.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'de'); })
+        .map(function (g) {
+          var n = personsOfG(g);
+          return '<tr class="' + (g.status === 'warteliste' ? 'pwl' : '') + '">' +
+            '<td>___ / ' + n + '</td>' +
+            '<td>' + esc(g.name) + (g.status === 'warteliste' ? ' (Warteliste)' : '') + '</td>' +
+            '<td>' + (g.plus ? '+' + g.plus : '') + '</td>' +
+            '<td>' + esc(g.von || '') + '</td></tr>';
+        }).join('');
+      var tot = 0;
+      doorGuests.forEach(function (g) { if (g.status !== 'warteliste') tot += personsOfG(g); });
+      $('print-area').innerHTML = '<h2>Gästeliste — ' + esc(CONFIG.band) + '</h2>' +
+        '<p class="phead">' + esc(CONFIG.datumText) + ' · ' + esc(CONFIG.ort) + ' · ' + tot + ' Personen angemeldet · Stand: ' + new Date().toLocaleString('de-DE') + ' · Regel: „da ___ / Gruppengröße" eintragen</p>' +
+        '<table><tr><th>da</th><th>Name</th><th>Begl.</th><th>via</th></tr>' + rows + '</table>';
+      window.print();
+    });
+    load();
+    setInterval(load, 60000); // sanft aktuell halten
+    setInterval(function () { dqFlush().then(updateDoorStats); }, 10000); // Offline-Queue nachsenden
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  // ---------- Init ----------
+  function init() {
+    renderInfo();
+    bindPlusRow($('f-plus'));
+    bindPlusRow($('m-plus'));
+    $('btn-signup').addEventListener('click', doSignup);
+    $('btn-update').addEventListener('click', doUpdate);
+    $('btn-cancel').addEventListener('click', doCancel);
+    $('btn-again').addEventListener('click', function () { clearCred(); showForm(); refreshStatus(); });
+    $('btn-ics').addEventListener('click', icsDownload);
+    $('btn-copy').addEventListener('click', function () {
+      var c = cred(); if (!c) return;
+      var link = location.origin + location.pathname + '#e=' + c.id + '.' + c.token;
+      (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+        .then(function () { showMsg($('me-msg'), 'Link kopiert.', true); })
+        .catch(function () { prompt('Link kopieren:', link); });
+    });
+
+    if (!CONFIG.EXEC_URL) {
+      var s = $('setup-msg');
+      s.style.display = 'block';
+      s.textContent = 'Setup unvollständig: EXEC_URL in index.html ist noch nicht gesetzt (siehe SETUP.md).';
+      return;
+    }
+
+    var h = parseHash();
+    if (h.door) { initDoor(h.door); return; }
+    if (h.via) inviteVon = h.via; // Hash bleibt stehen, damit Reload den Tag behält
+    if (h.id && h.token) {
+      saveCred({ id: h.id, token: h.token });
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    refreshStatus();
+    loadMe();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
