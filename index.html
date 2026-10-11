@@ -455,7 +455,7 @@
     function retry() { retried = true; return apiTimed(payload, SIGNUP_RETRY_MS); }
     function lost() {
       done();
-      showMsg($('form-msg'), 'Deine Anmeldung ist vermutlich angekommen, aber die Bestätigung fehlt. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — du wirst dadurch nicht doppelt eingetragen.', false);
+      showMsg($('form-msg'), 'Wir konnten nicht bestätigen, ob deine Anmeldung angekommen ist. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — falls sie schon angekommen ist, wirst du dadurch nicht doppelt eingetragen.', false);
     }
     apiTimed(payload, SIGNUP_RETRY_MS).then(function (r) {
       if (r.duplicate || !r.ok || complete(r)) return r;
