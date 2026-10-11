@@ -239,6 +239,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var LS_KEY = 'gl_cred';
   var loadTs = Date.now(); // für die Mindest-Ausfüllzeit (Spam-Bremse)
+  var SIGNUP_RETRY_MS = 20000; // Zeitgrenze je Anmelde-Versuch; danach einmal mit derselben rid nachfragen
 
   function rnd128() {
     var a = new Uint8Array(16);
@@ -260,6 +261,19 @@
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     }).then(function (r) { return r.json(); });
+  }
+  // wie api(), aber mit Zeitgrenze: nach ms wird die Anfrage abgebrochen (AbortError)
+  function apiTimed(payload, ms) {
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, ms) : null;
+    return fetch(CONFIG.EXEC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      signal: ctl ? ctl.signal : undefined
+    }).then(function (r) { return r.json(); })
+      .then(function (j) { clearTimeout(timer); return j; },
+            function (err) { clearTimeout(timer); throw err; });
   }
   function apiStatus() {
     return fetch(CONFIG.EXEC_URL).then(function (r) { return r.json(); });
@@ -426,15 +440,38 @@
     hideMsg($('form-msg'));
     var name = $('f-name').value.trim();
     if (!name) { showMsg($('form-msg'), 'Bitte gib deinen Namen an.', false); return; }
-    $('btn-signup').disabled = true;
-    api({ action: 'signup', name: name, plus: plusValue($('f-plus')), von: inviteVon,
-          rid: getRid(), hp: $('f-hp').value, t: Date.now() - loadTs, force: force === true }).then(function (r) {
-      $('btn-signup').disabled = false;
+    var btn = $('btn-signup');
+    var btnText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Wird gespeichert …';
+    showMsg($('form-msg'), 'Kann ein paar Sekunden dauern — bitte die Seite nicht schließen.', true);
+    var payload = { action: 'signup', name: name, plus: plusValue($('f-plus')), von: inviteVon,
+                    rid: getRid(), hp: $('f-hp').value, t: Date.now() - loadTs, force: force === true };
+    var retried = false;
+    function complete(r) { return r && r.ok && r.id && r.token; }
+    function done() { btn.disabled = false; btn.textContent = btnText; hideMsg($('form-msg')); }
+    // Zweiter Versuch mit derselben rid: das Backend erkennt die Wiederholung und liefert den
+    // schon gespeicherten Eintrag vollständig zurück — kein Doppeleintrag, kein zweiter Push.
+    function retry() { retried = true; return apiTimed(payload, SIGNUP_RETRY_MS); }
+    function lost() {
+      done();
+      showMsg($('form-msg'), 'Deine Anmeldung ist vermutlich angekommen, aber die Bestätigung fehlt. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — du wirst dadurch nicht doppelt eingetragen.', false);
+    }
+    apiTimed(payload, SIGNUP_RETRY_MS).then(function (r) {
+      if (r.duplicate || !r.ok || complete(r)) return r;
+      return retry(); // Antwort ohne id/token
+    }, function (err) {
+      if (err && err.name === 'AbortError') return retry(); // keine Antwort innerhalb der Zeitgrenze
+      throw err;
+    }).then(function (r) {
       if (r.duplicate) {
+        done();
         if (confirm(r.error + '\n\nTrotzdem zusätzlich anmelden?')) doSignup(true);
         return;
       }
-      if (!r.ok) { showMsg($('form-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      if (!r.ok) { done(); showMsg($('form-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      if (!complete(r)) { lost(); return; } // rid bleibt erhalten, nichts gespeichert
+      done();
       localStorage.removeItem('gl_rid'); // Anmeldung ist durch — nächste Anmeldung bekommt eine neue rid
       saveCred({ id: r.id, token: r.token });
       renderStatus(r);
@@ -443,7 +480,8 @@
         ? 'Die Liste ist gerade voll — du stehst auf der Warteliste. Wichtig: Wir können dich nicht benachrichtigen — schau vor dem Konzert hier mit deinem Link nach deinem Status.'
         : 'Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach deinen Namen. Bis zum Konzert! 🎸', true);
     }).catch(function () {
-      $('btn-signup').disabled = false;
+      if (retried) { lost(); return; }
+      done();
       showMsg($('form-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen. (Keine Sorge: doppelt zählt nicht.)', false);
     });
   }
