@@ -111,15 +111,15 @@
     EXEC_URL: 'https://script.google.com/macros/s/AKfycbzQPVZ4PCUNJJPko3ldFmQ_scIbO438BuMxGy9XWvNX4hQPQdGA0rpoXekN-b5I5dAfpQ/exec',
     band: 'Swipe Collective',          // <- Bandname
     titel: 'Konzert in der Junction Bar',
-    datumText: 'Sa, 7. November 2026', // <- Datum als Anzeigetext
+    datumText: 'Samstag, 07.11.2026',  // <- Datum als Anzeigetext (auch Kopf der Druckansicht)
     datumISO: '20261107',              // <- für den Kalender-Button (leer = Button aus)
     einlass: '19:00',
     beginn: '20:00',
     ort: 'Junction Bar',
-    adresse: 'Gneisenaustraße 18, 10961 Berlin (Kreuzberg)',
+    adresse: 'Gneisenaustraße 18, 10961 Berlin', // <- volle Adresse für den Kalendereintrag
+    ortAnzeige: 'Junction Bar, Gneisenaustr. 18, B-Kreuzberg', // <- Ort, wie er auf der Seite steht
     posterUrl: 'poster.jpg',           // <- leer = kein Poster
-    paypalUrl: 'https://paypal.me/vossmartin', // <- leer = keine Beitrags-Karte
-    spendenText: 'Der Eintritt ist für euch frei. Wenn ihr uns unterstützen wollt: Proberaum, Saiten und Technik zahlen wir selbst — über einen kleinen freiwilligen Beitrag freuen wir uns sehr.',
+    paypalUrl: 'https://paypal.me/vossmartin', // <- leer = keine Beitrags-Karte (Text steht fest in der Karte unten)
     kontaktName: 'Martin (Swipe Collective)', // <- Footer: verantwortliche Person / Bandname
     kontaktEmail: ''                   // <- bleibt leer: keine E-Mail-Adresse auf der öffentlichen Seite
   };
@@ -127,14 +127,14 @@
 
   <div id="app">
     <img id="poster" class="hidden" alt="Konzertposter">
-    <h1 id="h-band"></h1>
-    <p class="sub" id="h-titel"></p>
+    <h1 id="h-band" class="hidden"></h1>
+    <p class="sub hidden" id="h-titel"></p>
 
     <div class="card" id="card-info">
       <div class="info-line"><span class="ico">📅</span><span id="i-datum"></span></div>
       <div class="info-line"><span class="ico">🕗</span><span id="i-zeit"></span></div>
       <div class="info-line"><span class="ico">📍</span><span id="i-ort"></span></div>
-      <button class="btn ghost" id="btn-ics" style="margin-top:12px">📆 In Kalender speichern</button>
+      <button class="btn ghost" id="btn-ics" style="margin-top:12px">📆 Im Kalender speichern</button>
     </div>
 
     <div class="card" id="card-counter">
@@ -146,14 +146,14 @@
     <!-- Freeze-Hinweis (Konzerttag) -->
     <div class="card hidden" id="card-frozen">
       <strong>Die Online-Anmeldung ist geschlossen.</strong>
-      <p class="small" style="margin-bottom:0">Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird dir weitergeholfen.</p>
+      <p class="small" style="margin-bottom:0">Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird Dir weitergeholfen.</p>
     </div>
 
     <!-- Anmeldeformular -->
     <div class="card" id="card-form">
-      <strong>Auf die Gästeliste</strong>
+      <strong>Auf der Gästeliste eintragen</strong>
       <label for="f-name">Vor- und Nachname</label>
-      <input type="text" id="f-name" autocomplete="name" placeholder="z. B. Anna Beispiel">
+      <input type="text" id="f-name" autocomplete="name" placeholder="z.B. Jana Musterfrau">
       <input type="text" id="f-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0">
       <label>Begleitung</label>
       <div class="plus-row" id="f-plus">
@@ -165,7 +165,7 @@
       </div>
       <button class="btn" id="btn-signup">Anmelden</button>
       <div class="msg" id="form-msg"></div>
-      <p class="small" style="margin-bottom:0">Bitte den vollständigen Namen — damit wir dich an der Tür finden. Keine E-Mail, keine Handynummer.</p>
+      <p class="small" style="margin-bottom:0">Bitte den vollständigen Namen, damit wir Dich an der Tür schneller finden. Keine E-Mail, keine Handynummer.</p>
     </div>
 
     <!-- Eigener Eintrag -->
@@ -187,7 +187,7 @@
       <button class="btn" id="btn-update">Änderung speichern</button>
       <button class="btn danger" id="btn-cancel">Abmelden — ich kann doch nicht</button>
       <div class="msg" id="me-msg"></div>
-      <div class="linkbox">Auf diesem Gerät merkt sich die Seite deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen" wählen — nur dort merkt sich die Seite deinen Eintrag zuverlässig. Falls du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder dir selbst per WhatsApp schicken.<br>
+      <div class="linkbox">Auf diesem Gerät merkt sich die Seite Deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen" wählen — nur dort merkt sich die Seite Deinen Eintrag zuverlässig. Falls Du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder Dir selbst per WhatsApp schicken.<br>
         <a href="#" id="me-link"></a> <button class="btn ghost" id="btn-copy" style="margin-top:8px;padding:8px">Link kopieren</button>
       </div>
     </div>
@@ -195,14 +195,25 @@
     <!-- Abgemeldet -->
     <div class="card hidden" id="card-bye">
       <strong>Du bist abgemeldet.</strong>
-      <p class="small">Schade! Falls du es dir anders überlegst, kannst du dich unten einfach neu anmelden.</p>
+      <p class="small">Schade! Falls Du es Dir anders überlegst, kannst Du Dich unten einfach neu anmelden.</p>
       <button class="btn ghost" id="btn-again">Neu anmelden</button>
     </div>
 
     <!-- Spenden -->
     <div class="card hidden" id="card-spende">
-      <strong>🎸 Unterstützt uns</strong>
-      <p class="small" id="spende-text" style="margin:8px 0 0"></p>
+      <strong>🎵 Wir wünschen uns Eure Unterstützung</strong>
+      <div class="small" id="spende-text" style="margin:8px 0 0">
+        <p>Der Eintritt ist frei. Der Abend kostet uns allerdings einen fast vierstelligen Betrag. Damit wir nichts draufzahlen müssen, freuen wir uns über einen freiwilligen Beitrag. Im Schnitt reicht dafür ein Zehner pro Person.</p>
+        <p>Als Dankeschön gibt es am Abend:</p>
+        <ul>
+          <li>15 €: eine gespielte Gitarrensaite</li>
+          <li>20 €: eine gespielte Basssaite</li>
+          <li>25 €: ein gespielter Drumstick</li>
+          <li>50 €: ein Shout-out während des Konzerts</li>
+          <li>100 €: ein Handtuch vom Drummer 😉</li>
+        </ul>
+        <p>Schreib bei PayPal Deinen Namen dazu, damit wir Dir Dein Dankeschön am Abend geben können. Je nach Beitragslage vor Einlass behalten wir uns vor, im Lauf des Abends offensiver darauf hinzuweisen. 😉</p>
+      </div>
       <a class="btn ghost" id="btn-paypal" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💛 Freiwilliger Beitrag per PayPal</a>
     </div>
 
@@ -212,7 +223,7 @@
       <div id="ft-kontakt"></div>
       <details>
         <summary>Datenschutz</summary>
-        <p>Wir speichern nur, was du hier selbst angibst: deinen Namen und die Zahl deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der du den Link hast.</p>
+        <p>Wir speichern nur, was Du hier selbst angibst: Deinen Namen und die Zahl Deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der Du den Link hast.</p>
       </details>
     </footer>
   </div>
@@ -352,14 +363,13 @@
     $('h-titel').textContent = CONFIG.titel;
     $('i-datum').textContent = CONFIG.datumText;
     $('i-zeit').textContent = 'Einlass ' + CONFIG.einlass + ' · Beginn ' + CONFIG.beginn;
-    $('i-ort').textContent = CONFIG.ort + ' · ' + CONFIG.adresse;
+    $('i-ort').textContent = CONFIG.ortAnzeige;
     if (!CONFIG.datumISO) $('btn-ics').classList.add('hidden');
     if (CONFIG.posterUrl) {
       $('poster').src = CONFIG.posterUrl;
       $('poster').classList.remove('hidden');
     }
     if (CONFIG.paypalUrl) {
-      $('spende-text').textContent = CONFIG.spendenText;
       $('btn-paypal').href = CONFIG.paypalUrl;
       $('card-spende').classList.remove('hidden');
     }
@@ -439,7 +449,7 @@
   function doSignup(force) {
     hideMsg($('form-msg'));
     var name = $('f-name').value.trim();
-    if (!name) { showMsg($('form-msg'), 'Bitte gib deinen Namen an.', false); return; }
+    if (!name) { showMsg($('form-msg'), 'Bitte gib Deinen Namen an.', false); return; }
     var btn = $('btn-signup');
     var btnText = btn.textContent;
     btn.disabled = true;
@@ -455,7 +465,7 @@
     function retry() { retried = true; return apiTimed(payload, SIGNUP_RETRY_MS); }
     function lost() {
       done();
-      showMsg($('form-msg'), 'Wir konnten nicht bestätigen, ob deine Anmeldung angekommen ist. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — falls sie schon angekommen ist, wirst du dadurch nicht doppelt eingetragen.', false);
+      showMsg($('form-msg'), 'Wir konnten nicht bestätigen, ob Deine Anmeldung angekommen ist. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — falls sie schon angekommen ist, wirst Du dadurch nicht doppelt eingetragen.', false);
     }
     apiTimed(payload, SIGNUP_RETRY_MS).then(function (r) {
       if (r.duplicate || !r.ok || complete(r)) return r;
@@ -477,8 +487,8 @@
       renderStatus(r);
       showMe(r);
       showMsg($('me-msg'), r.status === 'warteliste'
-        ? 'Die Liste ist gerade voll — du stehst auf der Warteliste. Wichtig: Wir können dich nicht benachrichtigen — schau vor dem Konzert hier mit deinem Link nach deinem Status.'
-        : 'Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach deinen Namen. Bis zum Konzert! 🎸', true);
+        ? 'Die Liste ist gerade voll — Du stehst auf der Warteliste. Wichtig: Wir können Dich nicht benachrichtigen — schau vor dem Konzert hier mit Deinem Link nach Deinem Status.'
+        : 'Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach Deinen Namen. Bis zum Konzert! 🎸', true);
     }).catch(function () {
       if (retried) { lost(); return; }
       done();
