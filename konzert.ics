@@ -1,0 +1,17 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Swipe Collective//Gaesteliste november26//DE
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:20261107-swipe-collective-junction-bar@vossmartin.github.io
+DTSTAMP:20261013T120000Z
+DTSTART:20261107T180000Z
+DTEND:20261107T225900Z
+SUMMARY:Swipe Collective — Junction Bar
+LOCATION:Junction Bar\, Gneisenaustraße 18\, 10961 Berlin
+DESCRIPTION:Einlass 19:00\, Beginn 20:00. Gästeliste: https://vossmartin.g
+ ithub.io/november26/\nDoors 19:00\, start 20:00. Guest list: https://vossm
+ artin.github.io/november26/#lang=en
+URL:https://vossmartin.github.io/november26/
+END:VEVENT
+END:VCALENDAR

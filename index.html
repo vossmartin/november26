@@ -120,12 +120,12 @@
     titel: 'Konzert in der Junction Bar',
     datumText: 'Samstag, 07.11.2026',  // <- Datum als Anzeigetext (auch Kopf der Druckansicht)
     datumTextEn: 'Saturday, 7 November 2026', // <- Datum auf der englischen Seite
-    datumISO: '20261107',              // <- für den Kalender-Button (leer = Button aus)
+    datumISO: '20261107',              // <- für die Kalender-Links (leer = Links aus); konzert.ics ist eine feste Datei, bei Änderungen mitpflegen
     einlass: '19:00',
     beginn: '20:00',
     ort: 'Junction Bar',
     adresse: 'Gneisenaustraße 18, 10961 Berlin', // <- volle Adresse für den Kalendereintrag
-    ortAnzeige: 'Junction Bar, Gneisenaustr. 18, B‑Kreuzberg', // <- Ort, wie er auf der Seite steht
+    ortAnzeige: 'Junction Bar, Gneisenaustr. 18', // <- Ort, wie er auf der Seite steht
     posterUrl: 'poster.jpg',           // <- leer = kein Poster
     paypalUrl: 'https://paypal.me/vossmartin', // <- leer = keine Beitrags-Karte (Text steht fest in der Karte unten)
     kontaktName: 'Martin (Swipe Collective)', // <- Footer: verantwortliche Person / Bandname
@@ -143,7 +143,10 @@
       <div class="info-line"><span class="ico">📅</span><span id="i-datum"></span></div>
       <div class="info-line"><span class="ico">🕗</span><span id="i-zeit"></span></div>
       <div class="info-line"><span class="ico">📍</span><span id="i-ort"></span></div>
-      <button class="btn ghost" id="btn-ics" style="margin-top:12px" data-t="knopf.kalender">📆 Im Kalender speichern</button>
+      <div id="kalender-links">
+        <a class="btn ghost" id="lnk-gcal" target="_blank" rel="noopener" style="text-align:center;text-decoration:none" data-t="kalender.google">Google Kalender</a>
+        <a class="btn ghost" id="lnk-ics" href="konzert.ics" style="text-align:center;text-decoration:none" data-t="kalender.ics">Apple / Outlook (.ics)</a>
+      </div>
     </div>
 
     <div class="card" id="card-counter">
@@ -165,11 +168,11 @@
         <p>Der Eintritt ist frei. Der Abend kostet uns allerdings einen fast vierstelligen Betrag. Damit wir nichts draufzahlen müssen, freuen wir uns über einen freiwilligen Beitrag. Im Schnitt reicht dafür ein Zehner pro Person.</p>
         <p>Als Dankeschön gibt es am Abend:</p>
         <ul>
-          <li>15 €: eine gespielte Gitarrensaite</li>
-          <li>20 €: eine gespielte Basssaite</li>
-          <li>25 €: ein gespielter Drumstick</li>
-          <li>50 €: ein Shout-out während des Konzerts</li>
-          <li>100 €: ein Handtuch vom Drummer 😉</li>
+          <li>15 €: eine gespielte Gitarrensaite 🎸</li>
+          <li>20 €: eine gespielte Basssaite 🎸</li>
+          <li>25 €: ein gespielter Drumstick 🥁</li>
+          <li>50 €: ein Shout-out während des Konzerts 📣</li>
+          <li>100 €: ein Handtuch vom Drummer 💦😉</li>
         </ul>
         <p>Schreib bei PayPal Deinen Namen dazu, damit wir Dir Dein Dankeschön am Abend geben können. Je nach Beitragslage vor Einlass behalten wir uns vor, im Lauf des Abends offensiver darauf hinzuweisen. 😉</p>
       </div>
@@ -177,11 +180,11 @@
         <p>Entry is free. But the evening costs us an amount close to four figures. So we don't end up paying out of pocket, we'd appreciate a voluntary contribution. On average, about €10 per person covers it.</p>
         <p>As a thank-you, you'll get on the night:</p>
         <ul>
-          <li>€15: a guitar string played at the show</li>
-          <li>€20: a bass string played at the show</li>
-          <li>€25: a drumstick used at the show</li>
-          <li>€50: a shout-out during the concert</li>
-          <li>€100: a towel from the drummer 😉</li>
+          <li>€15: a guitar string played at the show 🎸</li>
+          <li>€20: a bass string played at the show 🎸</li>
+          <li>€25: a drumstick used at the show 🥁</li>
+          <li>€50: a shout-out during the concert 📣</li>
+          <li>€100: a towel from the drummer 💦😉</li>
         </ul>
         <p>Add your name to the PayPal payment so we can hand you your thank-you on the night. Depending on how contributions look before doors open, we reserve the right to remind you a bit more insistently during the evening. 😉</p>
       </div>
@@ -280,7 +283,8 @@
       "poster.alt": "Konzertposter",
       "umschalter": "EN",
       "info.zeit": "Einlass {einlass} · Beginn {beginn}",
-      "knopf.kalender": "📆 Im Kalender speichern",
+      "kalender.google": "Google Kalender",
+      "kalender.ics": "Apple / Outlook (.ics)",
       "zaehler.frei.eins": "Platz frei",
       "zaehler.frei.viele": "Plätze frei",
       "zaehler.warteliste.eins": "Warteliste aktiv — {n} Person wartet",
@@ -326,7 +330,7 @@
       "fuss.kontakt": "Kontakt: {name}",
       "datenschutz.titel": "Datenschutz",
       "datenschutz.text": "Wir speichern nur, was Du hier selbst angibst: Deinen Namen und die Zahl Deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der Du den Link hast.",
-      "kalender.beschreibung": "Einlass {einlass}, Beginn {beginn}. Du stehst auf der Gästeliste.",
+      "kalender.beschreibung": "Einlass {einlass}, Beginn {beginn}. Gästeliste: https://vossmartin.github.io/november26/",
       "server.bad_request": "Ungültiger Request.",
       "server.unknown_action": "Unbekannte Aktion.",
       "server.frozen_signup": "Die Online-Anmeldung ist geschlossen. Komm einfach vorbei und frag an der Tür.",
@@ -347,7 +351,8 @@
       "poster.alt": "Concert poster",
       "umschalter": "DE",
       "info.zeit": "Doors {einlass} · Start {beginn}",
-      "knopf.kalender": "📆 Add to calendar",
+      "kalender.google": "Google Calendar",
+      "kalender.ics": "Apple / Outlook (.ics)",
       "zaehler.frei.eins": "spot left",
       "zaehler.frei.viele": "spots left",
       "zaehler.warteliste.eins": "Waiting list active — {n} person waiting",
@@ -393,7 +398,7 @@
       "fuss.kontakt": "Contact: {name}",
       "datenschutz.titel": "Privacy",
       "datenschutz.text": "We only store what you enter here yourself: your name and the number of your plus-ones, plus the time you signed up. No email, no phone number, no cookies, no tracking. Only we (the band) can see the data; it's used solely for the guest list at the door and will be deleted completely a few days after the concert. Questions or deletion requests: contact Martin (Swipe Collective) — easiest via the person who sent you the link.",
-      "kalender.beschreibung": "Doors {einlass}, start {beginn}. You're on the guest list.",
+      "kalender.beschreibung": "Doors {einlass}, start {beginn}. Guest list: https://vossmartin.github.io/november26/#lang=en",
       "server.bad_request": "Invalid request.",
       "server.unknown_action": "Unknown action.",
       "server.frozen_signup": "Online sign-up is closed. Just come by and ask at the door.",
@@ -547,7 +552,8 @@
     $('i-datum').textContent = (LANG === 'en' && CONFIG.datumTextEn) ? CONFIG.datumTextEn : CONFIG.datumText;
     $('i-zeit').textContent = t('info.zeit', { einlass: CONFIG.einlass, beginn: CONFIG.beginn });
     $('i-ort').textContent = CONFIG.ortAnzeige;
-    if (!CONFIG.datumISO) $('btn-ics').classList.add('hidden');
+    if (!CONFIG.datumISO) $('kalender-links').classList.add('hidden');
+    else $('lnk-gcal').href = gcalUrl();
     if (CONFIG.posterUrl) {
       $('poster').src = CONFIG.posterUrl;
       $('poster').classList.remove('hidden');
@@ -560,23 +566,20 @@
       ? t('fuss.kontakt', { name: [CONFIG.kontaktName, CONFIG.kontaktEmail].filter(Boolean).join(' · ') })
       : 'Kontakt: (kontaktName/kontaktEmail in CONFIG eintragen)';
   }
-  function icsDownload() {
-    var dt = CONFIG.datumISO; // 'YYYYMMDD'
-    var start = dt + 'T' + CONFIG.einlass.replace(':', '') + '00';
-    var beginn = dt + 'T' + CONFIG.beginn.replace(':', '') + '00';
-    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//gaesteliste//DE', 'BEGIN:VEVENT',
-      'UID:' + dt + '-gaesteliste@' + location.host,
-      'DTSTART;TZID=Europe/Berlin:' + start,
-      'DTEND;TZID=Europe/Berlin:' + dt + 'T235900',
-      'SUMMARY:' + CONFIG.band + ' — ' + CONFIG.ort,
-      'DESCRIPTION:' + t('kalender.beschreibung', { einlass: CONFIG.einlass, beginn: CONFIG.beginn }).replace(/,/g, '\\,'),
-      'LOCATION:' + CONFIG.ort + '\\, ' + CONFIG.adresse.replace(/,/g, '\\,'),
-      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-    var a = document.createElement('a');
-    a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
-    a.download = 'konzert.ics';
-    a.click();
-    void beginn;
+  // Google-Kalender-Link (Termin anlegen), Beschreibung in der gewählten Sprache
+  function gcalUrl() {
+    var d = CONFIG.datumISO;
+    var p = {
+      action: 'TEMPLATE',
+      text: CONFIG.band + ' — ' + CONFIG.ort,
+      dates: d + 'T' + CONFIG.einlass.replace(':', '') + '00/' + d + 'T235900',
+      ctz: 'Europe/Berlin',
+      location: CONFIG.ort + ', ' + CONFIG.adresse,
+      details: t('kalender.beschreibung', { einlass: CONFIG.einlass, beginn: CONFIG.beginn })
+    };
+    return 'https://calendar.google.com/calendar/render?' + Object.keys(p).map(function (k) {
+      return k + '=' + encodeURIComponent(p[k]);
+    }).join('&');
   }
 
   // ---------- Gast-Ansichten ----------
@@ -879,7 +882,6 @@
     $('btn-update').addEventListener('click', doUpdate);
     $('btn-cancel').addEventListener('click', doCancel);
     $('btn-again').addEventListener('click', function () { clearCred(); showForm(); refreshStatus(); });
-    $('btn-ics').addEventListener('click', icsDownload);
     $('btn-lang').addEventListener('click', function () {
       setLang(LANG === 'en' ? 'de' : 'en', true);
       hashMitLang();
