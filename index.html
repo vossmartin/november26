@@ -40,6 +40,7 @@
     background: var(--card2); color: var(--text); font-size: 1rem; cursor: pointer;
   }
   .plus-row button.sel { background: var(--accent); border-color: var(--accent); color: #1a1204; font-weight: 700; }
+  .plus-row button:first-child { flex: 1.6; white-space: nowrap; }
   .btn {
     display: block; width: 100%; margin-top: 18px; padding: 14px; border: 0; border-radius: 12px;
     background: var(--accent); color: #1a1204; font-size: 1.05rem; font-weight: 700; cursor: pointer;
@@ -56,8 +57,9 @@
   .badge.warn { background: rgba(255,180,84,.15); color: var(--warn); }
   .linkbox {
     margin-top: 10px; padding: 10px 12px; background: var(--card2); border: 1px dashed var(--line);
-    border-radius: 10px; font-size: .8rem; color: var(--dim); word-break: break-all;
+    border-radius: 10px; font-size: .8rem; color: var(--dim); word-break: normal; overflow-wrap: break-word;
   }
+  #me-link { word-break: break-all; }
   .small { font-size: .82rem; color: var(--dim); }
   .hidden { display: none !important; }
   a { color: var(--accent); }
@@ -87,6 +89,11 @@
   #site-footer summary { cursor: pointer; color: var(--dim); }
   #site-footer p { margin: 6px 0 0; }
   #poster { width: 100%; border-radius: 14px; margin-bottom: 16px; display: block; }
+  .lang-switch { display: flex; justify-content: flex-end; margin: 0 0 10px; }
+  .lang-switch button {
+    background: transparent; border: 1px solid var(--line); color: var(--dim);
+    border-radius: 999px; padding: 4px 12px; font-size: .85rem; font-weight: 600; cursor: pointer;
+  }
   /* Druckansicht */
   #print-area { display: none; }
   @media print {
@@ -112,12 +119,13 @@
     band: 'Swipe Collective',          // <- Bandname
     titel: 'Konzert in der Junction Bar',
     datumText: 'Samstag, 07.11.2026',  // <- Datum als Anzeigetext (auch Kopf der Druckansicht)
+    datumTextEn: 'Saturday, 7 November 2026', // <- Datum auf der englischen Seite
     datumISO: '20261107',              // <- für den Kalender-Button (leer = Button aus)
     einlass: '19:00',
     beginn: '20:00',
     ort: 'Junction Bar',
     adresse: 'Gneisenaustraße 18, 10961 Berlin', // <- volle Adresse für den Kalendereintrag
-    ortAnzeige: 'Junction Bar, Gneisenaustr. 18, B-Kreuzberg', // <- Ort, wie er auf der Seite steht
+    ortAnzeige: 'Junction Bar, Gneisenaustr. 18, B‑Kreuzberg', // <- Ort, wie er auf der Seite steht
     posterUrl: 'poster.jpg',           // <- leer = kein Poster
     paypalUrl: 'https://paypal.me/vossmartin', // <- leer = keine Beitrags-Karte (Text steht fest in der Karte unten)
     kontaktName: 'Martin (Swipe Collective)', // <- Footer: verantwortliche Person / Bandname
@@ -126,7 +134,8 @@
   </script>
 
   <div id="app">
-    <img id="poster" class="hidden" alt="Konzertposter">
+    <div class="lang-switch"><button type="button" id="btn-lang">EN</button></div>
+    <img id="poster" class="hidden" alt="Konzertposter" data-t-alt="poster.alt">
     <h1 id="h-band" class="hidden"></h1>
     <p class="sub hidden" id="h-titel"></p>
 
@@ -134,7 +143,7 @@
       <div class="info-line"><span class="ico">📅</span><span id="i-datum"></span></div>
       <div class="info-line"><span class="ico">🕗</span><span id="i-zeit"></span></div>
       <div class="info-line"><span class="ico">📍</span><span id="i-ort"></span></div>
-      <button class="btn ghost" id="btn-ics" style="margin-top:12px">📆 Im Kalender speichern</button>
+      <button class="btn ghost" id="btn-ics" style="margin-top:12px" data-t="knopf.kalender">📆 Im Kalender speichern</button>
     </div>
 
     <div class="card" id="card-counter">
@@ -145,64 +154,14 @@
 
     <!-- Freeze-Hinweis (Konzerttag) -->
     <div class="card hidden" id="card-frozen">
-      <strong>Die Online-Anmeldung ist geschlossen.</strong>
-      <p class="small" style="margin-bottom:0">Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird Dir weitergeholfen.</p>
-    </div>
-
-    <!-- Anmeldeformular -->
-    <div class="card" id="card-form">
-      <strong>Auf der Gästeliste eintragen</strong>
-      <label for="f-name">Vor- und Nachname</label>
-      <input type="text" id="f-name" autocomplete="name" placeholder="z.B. Jana Musterfrau">
-      <input type="text" id="f-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0">
-      <label>Begleitung</label>
-      <div class="plus-row" id="f-plus">
-        <button data-p="0" class="sel">nur ich</button>
-        <button data-p="1">+1</button>
-        <button data-p="2">+2</button>
-        <button data-p="3">+3</button>
-        <button data-p="4">+4</button>
-      </div>
-      <button class="btn" id="btn-signup">Anmelden</button>
-      <div class="msg" id="form-msg"></div>
-      <p class="small" style="margin-bottom:0">Bitte den vollständigen Namen, damit wir Dich an der Tür schneller finden. Keine E-Mail, keine Handynummer.</p>
-    </div>
-
-    <!-- Eigener Eintrag -->
-    <div class="card hidden" id="card-me">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <strong>Dein Eintrag</strong>
-        <span class="badge ok" id="me-badge">angemeldet</span>
-      </div>
-      <label for="m-name">Vor- und Nachname</label>
-      <input type="text" id="m-name">
-      <label>Begleitung</label>
-      <div class="plus-row" id="m-plus">
-        <button data-p="0">nur ich</button>
-        <button data-p="1">+1</button>
-        <button data-p="2">+2</button>
-        <button data-p="3">+3</button>
-        <button data-p="4">+4</button>
-      </div>
-      <button class="btn" id="btn-update">Änderung speichern</button>
-      <button class="btn danger" id="btn-cancel">Abmelden — ich kann doch nicht</button>
-      <div class="msg" id="me-msg"></div>
-      <div class="linkbox">Auf diesem Gerät merkt sich die Seite Deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen" wählen — nur dort merkt sich die Seite Deinen Eintrag zuverlässig. Falls Du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder Dir selbst per WhatsApp schicken.<br>
-        <a href="#" id="me-link"></a> <button class="btn ghost" id="btn-copy" style="margin-top:8px;padding:8px">Link kopieren</button>
-      </div>
-    </div>
-
-    <!-- Abgemeldet -->
-    <div class="card hidden" id="card-bye">
-      <strong>Du bist abgemeldet.</strong>
-      <p class="small">Schade! Falls Du es Dir anders überlegst, kannst Du Dich unten einfach neu anmelden.</p>
-      <button class="btn ghost" id="btn-again">Neu anmelden</button>
+      <strong data-t="freeze.titel">Die Online-Anmeldung ist geschlossen.</strong>
+      <p class="small" style="margin-bottom:0" data-t="freeze.text">Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird Dir weitergeholfen.</p>
     </div>
 
     <!-- Spenden -->
     <div class="card hidden" id="card-spende">
-      <strong>🎵 Wir wünschen uns Eure Unterstützung</strong>
-      <div class="small" id="spende-text" style="margin:8px 0 0">
+      <strong data-t="beitrag.titel">🎵 Wir wünschen uns Eure Unterstützung</strong>
+      <div class="small" id="spende-text" style="margin:8px 0 0" data-nur-lang="de">
         <p>Der Eintritt ist frei. Der Abend kostet uns allerdings einen fast vierstelligen Betrag. Damit wir nichts draufzahlen müssen, freuen wir uns über einen freiwilligen Beitrag. Im Schnitt reicht dafür ein Zehner pro Person.</p>
         <p>Als Dankeschön gibt es am Abend:</p>
         <ul>
@@ -214,7 +173,69 @@
         </ul>
         <p>Schreib bei PayPal Deinen Namen dazu, damit wir Dir Dein Dankeschön am Abend geben können. Je nach Beitragslage vor Einlass behalten wir uns vor, im Lauf des Abends offensiver darauf hinzuweisen. 😉</p>
       </div>
-      <a class="btn ghost" id="btn-paypal" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💛 Freiwilliger Beitrag per PayPal</a>
+      <div class="small hidden" id="spende-text-en" style="margin:8px 0 0" data-nur-lang="en">
+        <p>Entry is free. But the evening costs us an amount close to four figures. So we don't end up paying out of pocket, we'd appreciate a voluntary contribution. On average, about €10 per person covers it.</p>
+        <p>As a thank-you, you'll get on the night:</p>
+        <ul>
+          <li>€15: a guitar string played at the show</li>
+          <li>€20: a bass string played at the show</li>
+          <li>€25: a drumstick used at the show</li>
+          <li>€50: a shout-out during the concert</li>
+          <li>€100: a towel from the drummer 😉</li>
+        </ul>
+        <p>Add your name to the PayPal payment so we can hand you your thank-you on the night. Depending on how contributions look before doors open, we reserve the right to remind you a bit more insistently during the evening. 😉</p>
+      </div>
+      <a class="btn ghost" id="btn-paypal" target="_blank" rel="noopener" style="text-align:center;text-decoration:none" data-t="knopf.paypal">💛 Freiwilliger Beitrag per PayPal</a>
+    </div>
+
+    <!-- Anmeldeformular -->
+    <div class="card" id="card-form">
+      <strong data-t="form.titel">Auf der Gästeliste eintragen</strong>
+      <label for="f-name" data-t="form.name">Vor- und Nachname</label>
+      <input type="text" id="f-name" autocomplete="name" placeholder="z.B. Jana Musterfrau" data-t-ph="form.name.platzhalter">
+      <input type="text" id="f-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;height:0;width:0;opacity:0">
+      <label data-t="form.begleitung">Begleitung</label>
+      <div class="plus-row" id="f-plus">
+        <button data-p="0" class="sel" data-t="form.nurich">nur ich</button>
+        <button data-p="1">+1</button>
+        <button data-p="2">+2</button>
+        <button data-p="3">+3</button>
+        <button data-p="4">+4</button>
+      </div>
+      <button class="btn" id="btn-signup">Anmelden</button>
+      <div class="msg" id="form-msg"></div>
+      <p class="small" style="margin-bottom:0" data-t="form.hinweis">Bitte den vollständigen Namen, damit wir Dich an der Tür schneller finden. Keine E-Mail, keine Handynummer.</p>
+    </div>
+
+    <!-- Eigener Eintrag -->
+    <div class="card hidden" id="card-me">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong data-t="eintrag.titel">Dein Eintrag</strong>
+        <span class="badge ok" id="me-badge">angemeldet</span>
+      </div>
+      <label for="m-name" data-t="form.name">Vor- und Nachname</label>
+      <input type="text" id="m-name">
+      <label data-t="form.begleitung">Begleitung</label>
+      <div class="plus-row" id="m-plus">
+        <button data-p="0" data-t="form.nurich">nur ich</button>
+        <button data-p="1">+1</button>
+        <button data-p="2">+2</button>
+        <button data-p="3">+3</button>
+        <button data-p="4">+4</button>
+      </div>
+      <button class="btn" id="btn-update" data-t="knopf.aendern">Änderung speichern</button>
+      <button class="btn danger" id="btn-cancel" data-t="knopf.abmelden">Abmelden — ich kann doch nicht</button>
+      <div class="msg" id="me-msg"></div>
+      <div class="linkbox"><span data-t="eintrag.linkbox">Auf diesem Gerät merkt sich die Seite Deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen" wählen — nur dort merkt sich die Seite Deinen Eintrag zuverlässig. Falls Du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder Dir selbst per WhatsApp schicken.</span><br>
+        <a href="#" id="me-link"></a> <button class="btn ghost" id="btn-copy" style="margin-top:8px;padding:8px" data-t="knopf.link">Link kopieren</button>
+      </div>
+    </div>
+
+    <!-- Abgemeldet -->
+    <div class="card hidden" id="card-bye">
+      <strong data-t="abgemeldet.titel">Du bist abgemeldet.</strong>
+      <p class="small" data-t="abgemeldet.text">Schade! Falls Du es Dir anders überlegst, kannst Du Dich unten einfach neu anmelden.</p>
+      <button class="btn ghost" id="btn-again" data-t="knopf.neu">Neu anmelden</button>
     </div>
 
     <div class="msg err" id="setup-msg" style="display:none"></div>
@@ -222,8 +243,8 @@
     <footer id="site-footer">
       <div id="ft-kontakt"></div>
       <details>
-        <summary>Datenschutz</summary>
-        <p>Wir speichern nur, was Du hier selbst angibst: Deinen Namen und die Zahl Deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der Du den Link hast.</p>
+        <summary data-t="datenschutz.titel">Datenschutz</summary>
+        <p data-t="datenschutz.text">Wir speichern nur, was Du hier selbst angibst: Deinen Namen und die Zahl Deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der Du den Link hast.</p>
       </details>
     </footer>
   </div>
@@ -251,6 +272,162 @@
   var LS_KEY = 'gl_cred';
   var loadTs = Date.now(); // für die Mindest-Ausfüllzeit (Spam-Bremse)
   var SIGNUP_RETRY_MS = 20000; // Zeitgrenze je Anmelde-Versuch; danach einmal mit derselben rid nachfragen
+
+  // Texte der Gäste-Seite. Tür-Modus und Druckansicht bleiben deutsch und stehen nicht hier.
+  var TEXTE = {
+    de: {
+      "seite.titel": "Swipe Collective — Gästeliste",
+      "poster.alt": "Konzertposter",
+      "umschalter": "EN",
+      "info.zeit": "Einlass {einlass} · Beginn {beginn}",
+      "knopf.kalender": "📆 Im Kalender speichern",
+      "zaehler.frei.eins": "Platz frei",
+      "zaehler.frei.viele": "Plätze frei",
+      "zaehler.warteliste.eins": "Warteliste aktiv — {n} Person wartet",
+      "zaehler.warteliste.viele": "Warteliste aktiv — {n} Personen warten",
+      "freeze.titel": "Die Online-Anmeldung ist geschlossen.",
+      "freeze.text": "Die Gästeliste ist für heute eingefroren. Komm einfach vorbei — an der Tür wird Dir weitergeholfen.",
+      "form.titel": "Auf der Gästeliste eintragen",
+      "form.name": "Vor- und Nachname",
+      "form.name.platzhalter": "z.B. Jana Musterfrau",
+      "form.begleitung": "Begleitung",
+      "form.nurich": "nur ich",
+      "knopf.anmelden": "Anmelden",
+      "knopf.warteliste": "Auf die Warteliste",
+      "knopf.speichert": "Wird gespeichert …",
+      "form.wartehinweis": "Kann ein paar Sekunden dauern — bitte die Seite nicht schließen.",
+      "form.hinweis": "Bitte den vollständigen Namen, damit wir Dich an der Tür schneller finden. Keine E-Mail, keine Handynummer.",
+      "fehler.name": "Bitte gib Deinen Namen an.",
+      "fehler.unbestaetigt": "Wir konnten nicht bestätigen, ob Deine Anmeldung angekommen ist. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — falls sie schon angekommen ist, wirst Du dadurch nicht doppelt eingetragen.",
+      "fehler.verbindung.anmelden": "Verbindung fehlgeschlagen — bitte nochmal versuchen. (Keine Sorge: doppelt zählt nicht.)",
+      "fehler.verbindung": "Verbindung fehlgeschlagen — bitte nochmal versuchen.",
+      "fehler.allgemein": "Das hat nicht geklappt.",
+      "dialog.duplikat.frage": "Trotzdem zusätzlich anmelden?",
+      "eintrag.titel": "Dein Eintrag",
+      "eintrag.status.angemeldet": "angemeldet ✓",
+      "eintrag.status.warteliste": "Warteliste",
+      "eintrag.status.warteliste.platz": "Warteliste · Platz {n}",
+      "knopf.aendern": "Änderung speichern",
+      "knopf.abmelden": "Abmelden — ich kann doch nicht",
+      "eintrag.linkbox": "Auf diesem Gerät merkt sich die Seite Deinen Eintrag automatisch. In WhatsApp geöffnet? Dann über das Menü (⋮ oder Teilen-Symbol) „Im Browser öffnen\" wählen — nur dort merkt sich die Seite Deinen Eintrag zuverlässig. Falls Du von woanders ändern willst: Tipp — diesen Link als Lesezeichen speichern oder Dir selbst per WhatsApp schicken.",
+      "knopf.link": "Link kopieren",
+      "meldung.link.kopiert": "Link kopiert.",
+      "dialog.link.kopieren": "Link kopieren:",
+      "meldung.angemeldet": "Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach Deinen Namen. Bis zum Konzert! 🎸",
+      "meldung.warteliste": "Die Liste ist gerade voll — Du stehst auf der Warteliste. Wichtig: Wir können Dich nicht benachrichtigen — schau vor dem Konzert hier mit Deinem Link nach Deinem Status.",
+      "meldung.gespeichert": "Gespeichert.",
+      "meldung.eingefroren": "Die Liste ist eingefroren — Änderungen sind nicht mehr möglich. Bis später!",
+      "dialog.abmelden": "Wirklich von der Gästeliste abmelden?",
+      "abgemeldet.titel": "Du bist abgemeldet.",
+      "abgemeldet.text": "Schade! Falls Du es Dir anders überlegst, kannst Du Dich unten einfach neu anmelden.",
+      "knopf.neu": "Neu anmelden",
+      "beitrag.titel": "🎵 Wir wünschen uns Eure Unterstützung",
+      "knopf.paypal": "💛 Freiwilliger Beitrag per PayPal",
+      "fuss.kontakt": "Kontakt: {name}",
+      "datenschutz.titel": "Datenschutz",
+      "datenschutz.text": "Wir speichern nur, was Du hier selbst angibst: Deinen Namen und die Zahl Deiner Begleitpersonen, dazu den Zeitpunkt der Anmeldung. Keine E-Mail, keine Telefonnummer, keine Cookies, kein Tracking. Die Daten sehen nur wir (die Band), sie dienen allein der Einlassliste und werden wenige Tage nach dem Konzert vollständig gelöscht. Fragen oder Löschwunsch: an Martin (Swipe Collective) – am einfachsten über die Person, von der Du den Link hast.",
+      "kalender.beschreibung": "Einlass {einlass}, Beginn {beginn}. Du stehst auf der Gästeliste.",
+      "server.bad_request": "Ungültiger Request.",
+      "server.unknown_action": "Unbekannte Aktion.",
+      "server.frozen_signup": "Die Online-Anmeldung ist geschlossen. Komm einfach vorbei und frag an der Tür.",
+      "server.retry_later": "Bitte später erneut versuchen.",
+      "server.too_fast": "Das ging zu schnell — bitte kurz prüfen und nochmal absenden.",
+      "server.name_missing": "Bitte einen Namen angeben.",
+      "server.duplicate": "„{name}\" steht schon auf der Liste. Falls Du das bist: Nutze Deinen persönlichen Link zum Ändern statt Dich neu anzumelden.",
+      "server.full": "Liste und Warteliste sind leider voll.",
+      "server.not_found": "Eintrag nicht gefunden.",
+      "server.frozen_update": "Änderungen sind nicht mehr möglich — sag einfach an der Tür Bescheid.",
+      "server.entry_cancelled": "Eintrag ist abgemeldet — bitte neu anmelden.",
+      "server.waitlist_blocks_increase": "Gerade stehen andere auf der Warteliste — zusätzliche Begleitung bitte separat anmelden (kommt dann auf die Warteliste).",
+      "server.no_room": "Dafür ist nicht mehr genug Platz.",
+      "server.frozen_cancel": "Die Liste ist eingefroren — Abmelden ist nicht mehr nötig."
+    },
+    en: {
+      "seite.titel": "Swipe Collective — Guest list",
+      "poster.alt": "Concert poster",
+      "umschalter": "DE",
+      "info.zeit": "Doors {einlass} · Start {beginn}",
+      "knopf.kalender": "📆 Add to calendar",
+      "zaehler.frei.eins": "spot left",
+      "zaehler.frei.viele": "spots left",
+      "zaehler.warteliste.eins": "Waiting list active — {n} person waiting",
+      "zaehler.warteliste.viele": "Waiting list active — {n} people waiting",
+      "freeze.titel": "Online sign-up is closed.",
+      "freeze.text": "The guest list is frozen for today. Just come by — we'll help you at the door.",
+      "form.titel": "Put your name on the guest list",
+      "form.name": "First and last name",
+      "form.name.platzhalter": "e.g. Jane Doe",
+      "form.begleitung": "Plus-ones",
+      "form.nurich": "just me",
+      "knopf.anmelden": "Sign up",
+      "knopf.warteliste": "Join the waiting list",
+      "knopf.speichert": "Saving …",
+      "form.wartehinweis": "This can take a few seconds — please don't close the page.",
+      "form.hinweis": "Please use your full name so we can find you faster at the door. No email, no phone number.",
+      "fehler.name": "Please enter your name.",
+      "fehler.unbestaetigt": "We couldn't confirm whether your sign-up went through. Please reload the page and tap \"Sign up\" again — if it already went through, you won't be added twice.",
+      "fehler.verbindung.anmelden": "Connection failed — please try again. (Don't worry: it won't count twice.)",
+      "fehler.verbindung": "Connection failed — please try again.",
+      "fehler.allgemein": "That didn't work.",
+      "dialog.duplikat.frage": "Sign up anyway as an additional guest?",
+      "eintrag.titel": "Your entry",
+      "eintrag.status.angemeldet": "on the list ✓",
+      "eintrag.status.warteliste": "Waiting list",
+      "eintrag.status.warteliste.platz": "Waiting list · position {n}",
+      "knopf.aendern": "Save changes",
+      "knopf.abmelden": "Cancel — I can't make it",
+      "eintrag.linkbox": "This device remembers your entry automatically. Opened in WhatsApp? Use the menu (⋮ or the share icon) and choose \"Open in browser\" — only there will the page reliably remember your entry. Want to make changes from another device? Tip: bookmark this link or send it to yourself on WhatsApp.",
+      "knopf.link": "Copy link",
+      "meldung.link.kopiert": "Link copied.",
+      "dialog.link.kopieren": "Copy link:",
+      "meldung.angemeldet": "You're on the list. Your plus-ones just give your name at the door. See you at the gig! 🎸",
+      "meldung.warteliste": "The list is full right now — you're on the waiting list. Important: we can't notify you, so please check your status here with your link before the concert.",
+      "meldung.gespeichert": "Saved.",
+      "meldung.eingefroren": "The list is frozen — changes are no longer possible. See you later!",
+      "dialog.abmelden": "Really remove yourself from the guest list?",
+      "abgemeldet.titel": "You're off the list.",
+      "abgemeldet.text": "Too bad! If you change your mind, you can simply sign up again below.",
+      "knopf.neu": "Sign up again",
+      "beitrag.titel": "🎵 We'd love your support",
+      "knopf.paypal": "💛 Voluntary contribution via PayPal",
+      "fuss.kontakt": "Contact: {name}",
+      "datenschutz.titel": "Privacy",
+      "datenschutz.text": "We only store what you enter here yourself: your name and the number of your plus-ones, plus the time you signed up. No email, no phone number, no cookies, no tracking. Only we (the band) can see the data; it's used solely for the guest list at the door and will be deleted completely a few days after the concert. Questions or deletion requests: contact Martin (Swipe Collective) — easiest via the person who sent you the link.",
+      "kalender.beschreibung": "Doors {einlass}, start {beginn}. You're on the guest list.",
+      "server.bad_request": "Invalid request.",
+      "server.unknown_action": "Unknown action.",
+      "server.frozen_signup": "Online sign-up is closed. Just come by and ask at the door.",
+      "server.retry_later": "Please try again later.",
+      "server.too_fast": "That was a bit quick — please check and submit again.",
+      "server.name_missing": "Please enter a name.",
+      "server.duplicate": "\"{name}\" is already on the list. If that's you, please use your personal link to make changes instead of signing up again.",
+      "server.full": "Sorry, the list and the waiting list are both full.",
+      "server.not_found": "Entry not found.",
+      "server.frozen_update": "Changes are no longer possible — just let us know at the door.",
+      "server.entry_cancelled": "This entry has been cancelled — please sign up again.",
+      "server.waitlist_blocks_increase": "Others are currently on the waiting list — please sign up additional plus-ones separately (they'll go on the waiting list).",
+      "server.no_room": "There isn't enough room left for that.",
+      "server.frozen_cancel": "The list is frozen — no need to cancel anymore."
+    }
+  };
+
+  var LANG = 'de';
+  // Text in der gewählten Sprache; {platzhalter} werden eingesetzt; fehlt Englisch, gilt Deutsch
+  function t(key, vals) {
+    var s = (TEXTE[LANG] && TEXTE[LANG][key] != null) ? TEXTE[LANG][key] : TEXTE.de[key];
+    if (s == null) return key;
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) { return vals && vals[k] != null ? vals[k] : m; });
+  }
+  function storedLang() { try { return localStorage.getItem('gl_lang'); } catch (e) { return null; } }
+  function setLang(l, remember) {
+    LANG = l === 'en' ? 'en' : 'de';
+    if (remember) { try { localStorage.setItem('gl_lang', LANG); } catch (e) { /* egal */ } }
+  }
+  // Meldung aus dem Backend: Kürzel → Text in der gewählten Sprache; ohne Kürzel der deutsche Text
+  function serverText(r) {
+    if (r && r.code && TEXTE.de['server.' + r.code] != null) return t('server.' + r.code, { name: r.name || '' });
+    return (r && r.error) || t('fehler.allgemein');
+  }
 
   function rnd128() {
     var a = new Uint8Array(16);
@@ -300,12 +477,16 @@
   function parseHash() {
     var h = location.hash.replace(/^#/, '');
     var m = h.match(/^tuer=(.+)$/);
-    if (m) return { door: m[1] };
-    m = h.match(/^e=([^.]+)\.(.+)$/);
-    if (m) return { id: m[1], token: m[2] };
-    m = h.match(/^v=(.+)$/);
-    if (m) return { via: decodeURIComponent(m[1]) };
-    return {};
+    if (m) return { door: m[1] }; // Tür-Link: alles nach tuer= ist das Token
+    var out = {};
+    h.split('&').forEach(function (part) {
+      var i = part.indexOf('='); if (i < 1) return;
+      var k = part.slice(0, i), v = part.slice(i + 1);
+      if (k === 'e') { var mm = v.match(/^([^.]+)\.(.+)$/); if (mm) { out.id = mm[1]; out.token = mm[2]; } }
+      else if (k === 'v') { try { out.via = decodeURIComponent(v); } catch (e) { out.via = v; } }
+      else if (k === 'lang' && (v === 'de' || v === 'en')) out.lang = v;
+    });
+    return out;
   }
   var inviteVon = ''; // Einlader-Tag aus dem verteilten Link (#v=name), rein intern
 
@@ -333,7 +514,9 @@
   }
 
   // ---------- Öffentlicher Zähler ----------
+  var lastStatus = null;
   function renderStatus(s) {
+    lastStatus = s;
     if (s.frozen) {
       $('card-frozen').classList.remove('hidden');
       $('card-form').classList.add('hidden');
@@ -343,14 +526,14 @@
     if (s.warteliste > 0) {
       // Solange gewartet wird, wäre „X Plätze frei" irreführend (Neue stellen sich hinten an)
       $('c-frei').textContent = '⏳';
-      $('c-lbl').textContent = 'Warteliste aktiv — ' + s.warteliste + (s.warteliste === 1 ? ' Person wartet' : ' Personen warten');
+      $('c-lbl').textContent = t(s.warteliste === 1 ? 'zaehler.warteliste.eins' : 'zaehler.warteliste.viele', { n: s.warteliste });
     } else {
       $('c-frei').textContent = s.frei;
-      $('c-lbl').textContent = s.frei === 1 ? 'Platz frei' : 'Plätze frei';
+      $('c-lbl').textContent = t(s.frei === 1 ? 'zaehler.frei.eins' : 'zaehler.frei.viele');
     }
     $('c-bar').style.width = Math.min(100, Math.round(100 * s.belegt / s.capacity)) + '%';
     $('c-wl').textContent = '';
-    $('btn-signup').textContent = (s.frei === 0 || s.warteliste > 0) ? 'Auf die Warteliste' : 'Anmelden';
+    if (!$('btn-signup').disabled) $('btn-signup').textContent = t((s.frei === 0 || s.warteliste > 0) ? 'knopf.warteliste' : 'knopf.anmelden');
   }
   function refreshStatus() {
     apiStatus().then(renderStatus).catch(function () {});
@@ -358,11 +541,11 @@
 
   // ---------- Info-Karte ----------
   function renderInfo() {
-    document.title = CONFIG.band + ' — Gästeliste';
+    document.title = t('seite.titel');
     $('h-band').textContent = CONFIG.band;
     $('h-titel').textContent = CONFIG.titel;
-    $('i-datum').textContent = CONFIG.datumText;
-    $('i-zeit').textContent = 'Einlass ' + CONFIG.einlass + ' · Beginn ' + CONFIG.beginn;
+    $('i-datum').textContent = (LANG === 'en' && CONFIG.datumTextEn) ? CONFIG.datumTextEn : CONFIG.datumText;
+    $('i-zeit').textContent = t('info.zeit', { einlass: CONFIG.einlass, beginn: CONFIG.beginn });
     $('i-ort').textContent = CONFIG.ortAnzeige;
     if (!CONFIG.datumISO) $('btn-ics').classList.add('hidden');
     if (CONFIG.posterUrl) {
@@ -374,7 +557,7 @@
       $('card-spende').classList.remove('hidden');
     }
     $('ft-kontakt').textContent = (CONFIG.kontaktName || CONFIG.kontaktEmail)
-      ? 'Kontakt: ' + [CONFIG.kontaktName, CONFIG.kontaktEmail].filter(Boolean).join(' · ')
+      ? t('fuss.kontakt', { name: [CONFIG.kontaktName, CONFIG.kontaktEmail].filter(Boolean).join(' · ') })
       : 'Kontakt: (kontaktName/kontaktEmail in CONFIG eintragen)';
   }
   function icsDownload() {
@@ -386,7 +569,7 @@
       'DTSTART;TZID=Europe/Berlin:' + start,
       'DTEND;TZID=Europe/Berlin:' + dt + 'T235900',
       'SUMMARY:' + CONFIG.band + ' — ' + CONFIG.ort,
-      'DESCRIPTION:Einlass ' + CONFIG.einlass + '\\, Beginn ' + CONFIG.beginn + '. Du stehst auf der Gästeliste.',
+      'DESCRIPTION:' + t('kalender.beschreibung', { einlass: CONFIG.einlass, beginn: CONFIG.beginn }).replace(/,/g, '\\,'),
       'LOCATION:' + CONFIG.ort + '\\, ' + CONFIG.adresse.replace(/,/g, '\\,'),
       'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
     var a = document.createElement('a');
@@ -402,28 +585,39 @@
     $('card-me').classList.add('hidden');
     $('card-bye').classList.add('hidden');
   }
+  var lastMe = null;
+  function editLink(c) {
+    return location.origin + location.pathname + '#e=' + c.id + '.' + c.token + (LANG === 'en' ? '&lang=en' : '');
+  }
+  // Status-Abzeichen und Änderungslink in der gewählten Sprache (Eingabefelder bleiben unberührt)
+  function renderMeTexte(data) {
+    var badge = $('me-badge');
+    if (data.status === 'warteliste') {
+      badge.className = 'badge warn';
+      badge.textContent = data.position ? t('eintrag.status.warteliste.platz', { n: data.position }) : t('eintrag.status.warteliste');
+    } else {
+      badge.className = 'badge ok';
+      badge.textContent = t('eintrag.status.angemeldet');
+    }
+    var c = cred();
+    if (c) {
+      var link = editLink(c);
+      $('me-link').textContent = link;
+      $('me-link').href = link;
+    }
+  }
   function showMe(data) {
+    lastMe = data;
     $('card-form').classList.add('hidden');
     $('card-bye').classList.add('hidden');
     $('card-me').classList.remove('hidden');
     $('m-name').value = data.name || '';
     setPlus($('m-plus'), Number(data.plus) || 0);
-    var badge = $('me-badge');
-    if (data.status === 'warteliste') {
-      badge.className = 'badge warn';
-      badge.textContent = 'Warteliste' + (data.position ? ' · Platz ' + data.position : '');
-    } else {
-      badge.className = 'badge ok';
-      badge.textContent = 'angemeldet ✓';
-    }
-    var c = cred();
-    var link = location.origin + location.pathname + '#e=' + c.id + '.' + c.token;
-    $('me-link').textContent = link;
-    $('me-link').href = link;
+    renderMeTexte(data);
     if (data.frozen) {
       $('btn-update').disabled = true;
       $('btn-cancel').disabled = true;
-      showMsg($('me-msg'), 'Die Liste ist eingefroren — Änderungen sind nicht mehr möglich. Bis später!', true);
+      showMsg($('me-msg'), t('meldung.eingefroren'), true);
     } else {
       $('btn-update').disabled = false;
       $('btn-cancel').disabled = false;
@@ -449,12 +643,12 @@
   function doSignup(force) {
     hideMsg($('form-msg'));
     var name = $('f-name').value.trim();
-    if (!name) { showMsg($('form-msg'), 'Bitte gib Deinen Namen an.', false); return; }
+    if (!name) { showMsg($('form-msg'), t('fehler.name'), false); return; }
     var btn = $('btn-signup');
     var btnText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Wird gespeichert …';
-    showMsg($('form-msg'), 'Kann ein paar Sekunden dauern — bitte die Seite nicht schließen.', true);
+    btn.textContent = t('knopf.speichert');
+    showMsg($('form-msg'), t('form.wartehinweis'), true);
     var payload = { action: 'signup', name: name, plus: plusValue($('f-plus')), von: inviteVon,
                     rid: getRid(), hp: $('f-hp').value, t: Date.now() - loadTs, force: force === true };
     var retried = false;
@@ -465,7 +659,7 @@
     function retry() { retried = true; return apiTimed(payload, SIGNUP_RETRY_MS); }
     function lost() {
       done();
-      showMsg($('form-msg'), 'Wir konnten nicht bestätigen, ob Deine Anmeldung angekommen ist. Bitte lade die Seite neu und tippe noch einmal auf Anmelden — falls sie schon angekommen ist, wirst Du dadurch nicht doppelt eingetragen.', false);
+      showMsg($('form-msg'), t('fehler.unbestaetigt'), false);
     }
     apiTimed(payload, SIGNUP_RETRY_MS).then(function (r) {
       if (r.duplicate || !r.ok || complete(r)) return r;
@@ -476,23 +670,21 @@
     }).then(function (r) {
       if (r.duplicate) {
         done();
-        if (confirm(r.error + '\n\nTrotzdem zusätzlich anmelden?')) doSignup(true);
+        if (confirm(serverText(r) + '\n\n' + t('dialog.duplikat.frage'))) doSignup(true);
         return;
       }
-      if (!r.ok) { done(); showMsg($('form-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      if (!r.ok) { done(); showMsg($('form-msg'), serverText(r), false); return; }
       if (!complete(r)) { lost(); return; } // rid bleibt erhalten, nichts gespeichert
       done();
       localStorage.removeItem('gl_rid'); // Anmeldung ist durch — nächste Anmeldung bekommt eine neue rid
       saveCred({ id: r.id, token: r.token });
       renderStatus(r);
       showMe(r);
-      showMsg($('me-msg'), r.status === 'warteliste'
-        ? 'Die Liste ist gerade voll — Du stehst auf der Warteliste. Wichtig: Wir können Dich nicht benachrichtigen — schau vor dem Konzert hier mit Deinem Link nach Deinem Status.'
-        : 'Du stehst auf der Liste. Deine Begleitung nennt an der Tür einfach Deinen Namen. Bis zum Konzert! 🎸', true);
+      showMsg($('me-msg'), t(r.status === 'warteliste' ? 'meldung.warteliste' : 'meldung.angemeldet'), true);
     }).catch(function () {
       if (retried) { lost(); return; }
       done();
-      showMsg($('form-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen. (Keine Sorge: doppelt zählt nicht.)', false);
+      showMsg($('form-msg'), t('fehler.verbindung.anmelden'), false);
     });
   }
 
@@ -503,26 +695,26 @@
     api({ action: 'update', id: c.id, token: c.token, name: $('m-name').value.trim(), plus: plusValue($('m-plus')) })
       .then(function (r) {
         $('btn-update').disabled = false;
-        if (!r.ok) { showMsg($('me-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+        if (!r.ok) { showMsg($('me-msg'), serverText(r), false); return; }
         renderStatus(r); showMe(r);
-        showMsg($('me-msg'), 'Gespeichert.', true);
+        showMsg($('me-msg'), t('meldung.gespeichert'), true);
       }).catch(function () {
         $('btn-update').disabled = false;
-        showMsg($('me-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen.', false);
+        showMsg($('me-msg'), t('fehler.verbindung'), false);
       });
   }
 
   function doCancel() {
-    if (!confirm('Wirklich von der Gästeliste abmelden?')) return;
+    if (!confirm(t('dialog.abmelden'))) return;
     var c = cred(); if (!c) return;
     $('btn-cancel').disabled = true;
     api({ action: 'cancel', id: c.id, token: c.token }).then(function (r) {
       $('btn-cancel').disabled = false;
-      if (!r.ok) { showMsg($('me-msg'), r.error || 'Das hat nicht geklappt.', false); return; }
+      if (!r.ok) { showMsg($('me-msg'), serverText(r), false); return; }
       renderStatus(r); showBye();
     }).catch(function () {
       $('btn-cancel').disabled = false;
-      showMsg($('me-msg'), 'Verbindung fehlgeschlagen — bitte nochmal versuchen.', false);
+      showMsg($('me-msg'), t('fehler.verbindung'), false);
     });
   }
 
@@ -648,7 +840,38 @@
   }
 
   // ---------- Init ----------
+  // alle Texte der Gäste-Seite in der gewählten Sprache setzen
+  function renderTexte() {
+    document.documentElement.lang = LANG;
+    document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t(el.getAttribute('data-t')); });
+    document.querySelectorAll('[data-t-ph]').forEach(function (el) { el.placeholder = t(el.getAttribute('data-t-ph')); });
+    document.querySelectorAll('[data-t-alt]').forEach(function (el) { el.alt = t(el.getAttribute('data-t-alt')); });
+    document.querySelectorAll('[data-nur-lang]').forEach(function (el) { el.classList.toggle('hidden', el.getAttribute('data-nur-lang') !== LANG); });
+    $('btn-lang').textContent = t('umschalter');
+    if (!lastStatus) {
+      $('c-lbl').textContent = t('zaehler.frei.viele');
+      if (!$('btn-signup').disabled) $('btn-signup').textContent = t('knopf.anmelden');
+    }
+  }
+  function renderAll() {
+    renderTexte();
+    renderInfo();
+    if (lastStatus) renderStatus(lastStatus);
+    if (lastMe && !$('card-me').classList.contains('hidden')) renderMeTexte(lastMe);
+  }
+  // Sprache im Link mitführen (#v=…&lang=en), damit Neuladen die Wahl behält
+  function hashMitLang() {
+    var h = location.hash.replace(/^#/, '');
+    if (!h || /^tuer=/.test(h)) return;
+    var parts = h.split('&').filter(function (p) { return p && p.indexOf('lang=') !== 0; });
+    if (LANG === 'en') parts.push('lang=en');
+    history.replaceState(null, '', location.pathname + location.search + (parts.length ? '#' + parts.join('&') : ''));
+  }
+
   function init() {
+    var h = parseHash();
+    if (!h.door) setLang(h.lang || storedLang() || 'de', !!h.lang); // Tür-Modus bleibt deutsch
+    renderTexte();
     renderInfo();
     bindPlusRow($('f-plus'));
     bindPlusRow($('m-plus'));
@@ -657,12 +880,17 @@
     $('btn-cancel').addEventListener('click', doCancel);
     $('btn-again').addEventListener('click', function () { clearCred(); showForm(); refreshStatus(); });
     $('btn-ics').addEventListener('click', icsDownload);
+    $('btn-lang').addEventListener('click', function () {
+      setLang(LANG === 'en' ? 'de' : 'en', true);
+      hashMitLang();
+      renderAll();
+    });
     $('btn-copy').addEventListener('click', function () {
       var c = cred(); if (!c) return;
-      var link = location.origin + location.pathname + '#e=' + c.id + '.' + c.token;
+      var link = editLink(c);
       (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
-        .then(function () { showMsg($('me-msg'), 'Link kopiert.', true); })
-        .catch(function () { prompt('Link kopieren:', link); });
+        .then(function () { showMsg($('me-msg'), t('meldung.link.kopiert'), true); })
+        .catch(function () { prompt(t('dialog.link.kopieren'), link); });
     });
 
     if (!CONFIG.EXEC_URL) {
@@ -672,7 +900,6 @@
       return;
     }
 
-    var h = parseHash();
     if (h.door) { initDoor(h.door); return; }
     if (h.via) inviteVon = h.via; // Hash bleibt stehen, damit Reload den Tag behält
     if (h.id && h.token) {
